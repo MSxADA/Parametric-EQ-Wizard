@@ -18,19 +18,16 @@
             border: 2px solid;
             border-image-slice: 1;
             border-width: 2px;
-            /* New Gradient: Orange, Yellow, Green, Pink, Purple */
-            border-image-source: linear-gradient(to bottom right, #ff6700, #ffff33, #39ff14, #f957d0, #a020f0);
+            border-image-source: linear-gradient(to bottom right, #f957d0, #0abdc6);
         }
         .vapor-shadow {
-            /* New Shadow: Orange and Purple */
-            box-shadow: 0 0 10px rgba(255, 103, 0, 0.4), 0 0 20px rgba(160, 32, 240, 0.4);
+            box-shadow: 0 0 10px rgba(249, 87, 208, 0.4), 0 0 20px rgba(10, 189, 198, 0.4);
         }
         .preset-btn {
             transition: all 0.3s ease;
             border: 1px solid #4a4a6a;
         }
         .preset-btn:hover {
-            /* New Hover: Neon Pink */
             background-color: #f957d0;
             color: #1a1a2e;
             border-color: #f957d0;
@@ -38,16 +35,14 @@
             box-shadow: 0 4px 15px rgba(249, 87, 208, 0.3);
         }
         .preset-btn.active {
-            /* New Active: Neon Green */
-            background-color: #39ff14;
+            background-color: #0abdc6;
             color: #1a1a2e;
-            border-color: #39ff14;
+            border-color: #0abdc6;
             font-weight: 600;
         }
         .table-header {
-            /* New Header: Neon Purple */
-            background-color: rgba(160, 32, 240, 0.2);
-            color: #a020f0;
+            background-color: rgba(10, 189, 198, 0.2);
+            color: #0abdc6;
         }
         #eq-canvas-container {
             position: relative;
@@ -69,8 +64,7 @@
         
         <!-- Header -->
         <header class="text-center mb-8">
-            <!-- New H1 Gradient -->
-            <h1 class="text-3xl md:text-4xl font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-pink-500 to-purple-600">Parametric EQ Preset Generator</h1>
+            <h1 class="text-3xl md:text-4xl font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400">Parametric EQ Preset Generator</h1>
             <p class="mt-2 text-gray-400 max-w-3xl mx-auto">Select a preset to visualize the EQ curve and get the precise settings for your digital audio device.</p>
         </header>
 
@@ -79,8 +73,7 @@
             <div class="space-y-8">
                 <!-- Listening Style Presets -->
                 <div>
-                    <!-- New Border Color -->
-                    <h2 class="text-xl font-semibold mb-4 border-b-2 border-[#ff6700]/30 pb-2">Listening Styles</h2>
+                    <h2 class="text-xl font-semibold mb-4 border-b-2 border-cyan-400/30 pb-2">Listening Styles</h2>
                     <div id="style-presets" class="grid grid-cols-2 md:grid-cols-3 gap-3">
                         <!-- Buttons will be injected here by JS -->
                     </div>
@@ -88,8 +81,7 @@
                 
                 <!-- Music Genre Presets -->
                 <div>
-                    <!-- New Border Color -->
-                    <h2 class="text-xl font-semibold mb-4 border-b-2 border-[#a020f0]/30 pb-2">Music Genres</h2>
+                    <h2 class="text-xl font-semibold mb-4 border-b-2 border-pink-500/30 pb-2">Music Genres</h2>
                     <div id="genre-presets" class="grid grid-cols-2 md:grid-cols-3 gap-3">
                         <!-- Buttons will be injected here by JS -->
                     </div>
@@ -173,6 +165,7 @@
         // --- INITIALIZATION ---
         window.onload = () => {
             populateButtons();
+            // Use ResizeObserver to redraw canvas when its container size changes
             new ResizeObserver(() => drawGrid(presets[activePresetButton?.dataset.preset])).observe(document.getElementById('eq-canvas-container'));
             drawGrid();
         };
@@ -239,8 +232,8 @@
         // --- CANVAS DRAWING LOGIC ---
         const MIN_FREQ = 20;
         const MAX_FREQ = 20000;
-        const MIN_GAIN = -15; 
-        const MAX_GAIN = 15;
+        const MIN_GAIN = -15; // Added padding
+        const MAX_GAIN = 15;  // Added padding
 
         function freqToX(freq, width) {
             const logMin = Math.log10(MIN_FREQ);
@@ -264,14 +257,17 @@
 
             ctx.clearRect(0, 0, width, height);
 
+            // Define padding
             const padding = { top: 20, right: 20, bottom: 30, left: 40 };
             const chartWidth = width - padding.left - padding.right;
             const chartHeight = height - padding.top - padding.bottom;
 
+            // Draw grid lines
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
             ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
             ctx.font = '11px Inter';
             
+            // Vertical (Frequency) lines and labels
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
             const freqLines = [30, 100, 300, 1000, 3000, 10000];
@@ -285,6 +281,7 @@
                 ctx.fillText(label + "Hz", x, padding.top + chartHeight + 5);
             });
 
+            // Horizontal (Gain) lines and labels
             ctx.textAlign = 'right';
             ctx.textBaseline = 'middle';
             const gainLines = [-12, -9, -6, -3, 3, 6, 9, 12];
@@ -297,15 +294,16 @@
                 ctx.fillText(`${gain}dB`, padding.left - 8, y);
             });
             
-            // New 0dB line color: Neon Pink
+            // Draw 0dB line
             const y0 = padding.top + gainToY(0, chartHeight);
-            ctx.strokeStyle = 'rgba(249, 87, 208, 0.5)';
+            ctx.strokeStyle = 'rgba(10, 189, 198, 0.5)';
             ctx.lineWidth = 1.5;
             ctx.beginPath();
             ctx.moveTo(padding.left, y0);
             ctx.lineTo(padding.left + chartWidth, y0);
             ctx.stroke();
 
+            // Redraw the curve if one is active
             if (presetData && presetData.length > 0) {
                 drawCurve(presetData, false);
             }
@@ -323,11 +321,9 @@
             const chartHeight = height - padding.top - padding.bottom;
             
             ctx.beginPath();
-            // New Curve Color: Neon Yellow
-            ctx.strokeStyle = '#ffff33';
+            ctx.strokeStyle = '#f957d0';
             ctx.lineWidth = 3;
-            // New Shadow Color: Neon Yellow
-            ctx.shadowColor = 'rgba(255, 255, 51, 0.5)';
+            ctx.shadowColor = 'rgba(249, 87, 208, 0.5)';
             ctx.shadowBlur = 10;
 
             for (let i = 0; i <= chartWidth; i++) {
@@ -341,6 +337,7 @@
                     totalGain += getGainAtFrequency(band, freq);
                 });
                 
+                // Clamp gain to the visible range for drawing
                 const displayGain = Math.max(-12, Math.min(12, totalGain));
                 
                 const x = padding.left + i;
