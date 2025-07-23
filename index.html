@@ -57,41 +57,40 @@
             width: 100%;
             height: 100%;
         }
-        /* -- Style for Gain values -- */
-        .text-neon-green {
-            color: #39ff14;
-            text-shadow: 0 0 5px rgba(57, 255, 20, 0.7);
-        }
-        .text-neon-red {
-            color: #ff3131;
-            text-shadow: 0 0 5px rgba(255, 49, 49, 0.7);
-        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-7xl mx-auto bg-[#161625] p-6 md:p-8 rounded-2xl vapor-border vapor-shadow">
         
+        <!-- Header -->
         <header class="text-center mb-8">
             <h1 class="text-3xl md:text-4xl font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400">Parametric EQ Preset Generator</h1>
             <p class="mt-2 text-gray-400 max-w-3xl mx-auto">Select a preset to visualize the EQ curve and get the precise settings for your digital audio device.</p>
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Controls and Presets -->
             <div class="space-y-8">
+                <!-- Listening Style Presets -->
                 <div>
                     <h2 class="text-xl font-semibold mb-4 border-b-2 border-cyan-400/30 pb-2">Listening Styles</h2>
                     <div id="style-presets" class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        </div>
+                        <!-- Buttons will be injected here by JS -->
+                    </div>
                 </div>
                 
+                <!-- Music Genre Presets -->
                 <div>
                     <h2 class="text-xl font-semibold mb-4 border-b-2 border-pink-500/30 pb-2">Music Genres</h2>
                     <div id="genre-presets" class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        </div>
+                        <!-- Buttons will be injected here by JS -->
+                    </div>
                 </div>
             </div>
 
+            <!-- Display Area: EQ Curve and Settings Table -->
             <div class="bg-[#1a1a2e]/60 p-4 rounded-lg border border-gray-700">
+                <!-- EQ Curve Display -->
                 <div>
                     <h3 class="text-lg font-semibold text-center mb-2" id="current-preset-title">Select a Preset</h3>
                     <div id="eq-canvas-container" class="bg-[#10101b] p-2 rounded-md">
@@ -99,6 +98,7 @@
                     </div>
                 </div>
 
+                <!-- Settings Table -->
                 <div class="mt-6">
                     <h3 class="text-lg font-semibold mb-2">PEQ Settings</h3>
                     <div class="overflow-x-auto">
@@ -113,6 +113,7 @@
                                 </tr>
                             </thead>
                             <tbody id="settings-table-body" class="divide-y divide-gray-700">
+                                <!-- Rows will be injected here -->
                                 <tr>
                                     <td colspan="5" class="text-center p-8 text-gray-500">Settings will appear here...</td>
                                 </tr>
@@ -217,23 +218,11 @@
             presetData.forEach((band, index) => {
                 const row = document.createElement('tr');
                 row.className = 'bg-[#161625] hover:bg-[#1a1a2e]';
-                
-                // Determine class based on gain value
-                let gainClass = '';
-                if (band.gain > 0) {
-                    gainClass = 'text-neon-green font-semibold';
-                } else if (band.gain < 0) {
-                    gainClass = 'text-neon-red font-semibold';
-                }
-
-                // Format gain text to include a "+" for positive values
-                const gainText = band.gain > 0 ? `+${band.gain.toFixed(1)}` : band.gain.toFixed(1);
-
                 row.innerHTML = `
                     <td class="p-3 rounded-l-md">${index + 1}</td>
                     <td class="p-3">${band.type}</td>
                     <td class="p-3">${band.freq}</td>
-                    <td class="p-3 ${gainClass}">${gainText}</td>
+                    <td class="p-3">${band.gain.toFixed(1)}</td>
                     <td class="p-3 rounded-r-md">${band.q.toFixed(2)}</td>
                 `;
                 tableBody.appendChild(row);
@@ -385,4 +374,26 @@
                 case 'Low Shelf': {
                     const alpha = Math.sin(w0) / (2 * q);
                     const beta = 2 * Math.sqrt(A) * alpha;
-                    const b0 = A*((A+1)-(A-1)*Math.cos(w0)+beta), b1 = 2*A*((A-1)-(A+1)*Math.cos(w0)), b2 = A*((A+1)-(A-1
+                    const b0 = A*((A+1)-(A-1)*Math.cos(w0)+beta), b1 = 2*A*((A-1)-(A+1)*Math.cos(w0)), b2 = A*((A+1)-(A-1)*Math.cos(w0)-beta);
+                    const a0 = (A+1)+(A-1)*Math.cos(w0)+beta, a1 = -2*((A-1)+(A+1)*Math.cos(w0)), a2 = (A+1)+(A-1)*Math.cos(w0)-beta;
+                    const phi = Math.pow(Math.sin(w / 2), 2);
+                    const num = Math.pow(b0+b1+b2,2) - 4*(b0*b1 + 4*b0*b2 + b1*b2)*phi + 16*b0*b2*phi*phi;
+                    const den = Math.pow(a0+a1+a2,2) - 4*(a0*a1 + 4*a0*a2 + a1*a2)*phi + 16*a0*a2*phi*phi;
+                    return (den === 0) ? 0 : 10 * Math.log10(num / den);
+                }
+                case 'High Shelf': {
+                    const alpha = Math.sin(w0) / (2 * q);
+                    const beta = 2 * Math.sqrt(A) * alpha;
+                    const b0 = A*((A+1)+(A-1)*Math.cos(w0)+beta), b1 = -2*A*((A-1)+(A+1)*Math.cos(w0)), b2 = A*((A+1)+(A-1)*Math.cos(w0)-beta);
+                    const a0 = (A+1)-(A-1)*Math.cos(w0)+beta, a1 = 2*((A-1)-(A+1)*Math.cos(w0)), a2 = (A+1)-(A-1)*Math.cos(w0)-beta;
+                    const phi = Math.pow(Math.sin(w / 2), 2);
+                    const num = Math.pow(b0+b1+b2,2) - 4*(b0*b1 + 4*b0*b2 + b1*b2)*phi + 16*b0*b2*phi*phi;
+                    const den = Math.pow(a0+a1+a2,2) - 4*(a0*a1 + 4*a0*a2 + a1*a2)*phi + 16*a0*a2*phi*phi;
+                    return (den === 0) ? 0 : 10 * Math.log10(num / den);
+                }
+                default: return 0;
+            }
+        }
+    </script>
+</body>
+</html>
