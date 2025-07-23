@@ -57,6 +57,16 @@
             width: 100%;
             height: 100%;
         }
+        /* Style for positive gain (boost) */
+        .gain-boost {
+            color: #7FFF00; /* Neon Green (Chartreuse) */
+            text-shadow: 0 0 5px #7FFF00;
+        }
+        /* Style for negative gain (cut) */
+        .gain-cut {
+            color: #FF4747; /* Neon Red */
+            text-shadow: 0 0 5px #FF4747;
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -216,13 +226,17 @@
                  return;
             }
             presetData.forEach((band, index) => {
+                // Determine the class and sign for the gain value
+                const gainClass = band.gain > 0 ? 'gain-boost' : (band.gain < 0 ? 'gain-cut' : '');
+                const gainSign = band.gain > 0 ? '+' : '';
+
                 const row = document.createElement('tr');
                 row.className = 'bg-[#161625] hover:bg-[#1a1a2e]';
                 row.innerHTML = `
                     <td class="p-3 rounded-l-md">${index + 1}</td>
                     <td class="p-3">${band.type}</td>
                     <td class="p-3">${band.freq}</td>
-                    <td class="p-3">${band.gain.toFixed(1)}</td>
+                    <td class="p-3 font-semibold ${gainClass}">${gainSign}${band.gain.toFixed(1)}</td>
                     <td class="p-3 rounded-r-md">${band.q.toFixed(2)}</td>
                 `;
                 tableBody.appendChild(row);
@@ -311,25 +325,44 @@
 
         function drawCurve(presetData, redrawGridFlag = true) {
             if (redrawGridFlag) {
-                drawGrid(presetData);
+                drawGrid(presetData); // This clears the canvas and redraws the grid
             }
-            
+
             const width = canvas.clientWidth;
             const height = canvas.clientHeight;
             const padding = { top: 20, right: 20, bottom: 30, left: 40 };
             const chartWidth = width - padding.left - padding.right;
             const chartHeight = height - padding.top - padding.bottom;
             
-            ctx.beginPath();
-            ctx.strokeStyle = '#f957d0';
-            ctx.lineWidth = 3;
-            ctx.shadowColor = 'rgba(249, 87, 208, 0.5)';
-            ctx.shadowBlur = 10;
+            // Define neon colors from the CSS
+            const neonGreen = '#7FFF00';
+            const neonRed = '#FF4747';
+            // Color for the 0dB line, to be used for flat segments
+            const zeroLineColor = 'rgba(10, 189, 198, 0.8)';
 
-            for (let i = 0; i <= chartWidth; i++) {
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 8;
+
+            let lastX, lastY;
+
+            // Get the logarithmic range for frequency
+            const logMin = Math.log10(MIN_FREQ);
+            const logMax = Math.log10(MAX_FREQ);
+            
+            // Calculate the position of the very first point (at i=0) to start drawing from
+            let initialFreq = Math.pow(10, logMin);
+            let initialTotalGain = 0;
+            presetData.forEach(band => {
+                initialTotalGain += getGainAtFrequency(band, initialFreq);
+            });
+            // Clamp the gain to the visible area of the chart (+/- 12dB)
+            let lastDisplayGain = Math.max(-12, Math.min(12, initialTotalGain));
+            lastX = padding.left;
+            lastY = padding.top + gainToY(lastDisplayGain, chartHeight);
+
+            // Loop through each horizontal pixel of the chart area
+            for (let i = 1; i <= chartWidth; i++) {
                 const percent = i / chartWidth;
-                const logMin = Math.log10(MIN_FREQ);
-                const logMax = Math.log10(MAX_FREQ);
                 const freq = Math.pow(10, logMin + (logMax - logMin) * percent);
                 
                 let totalGain = 0;
@@ -337,19 +370,37 @@
                     totalGain += getGainAtFrequency(band, freq);
                 });
                 
-                // Clamp gain to the visible range for drawing
                 const displayGain = Math.max(-12, Math.min(12, totalGain));
                 
                 const x = padding.left + i;
                 const y = padding.top + gainToY(displayGain, chartHeight);
 
-                if (i === 0) {
-                    ctx.moveTo(x, y);
+                // Determine color for this segment based on its gain value
+                let segmentColor;
+                // Use a small threshold to prevent color flickering near the zero line
+                if (displayGain > 0.05) { 
+                    segmentColor = neonGreen;
+                } else if (displayGain < -0.05) {
+                    segmentColor = neonRed;
                 } else {
-                    ctx.lineTo(x, y);
+                    // Use the 0dB line color for parts that are essentially flat
+                    segmentColor = zeroLineColor; 
                 }
+
+                // Draw the line segment from the last point to the current one
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.strokeStyle = segmentColor;
+                ctx.shadowColor = segmentColor; // Match shadow to the line color for a glow effect
+                ctx.lineTo(x, y);
+                ctx.stroke();
+
+                // The current point becomes the last point for the next iteration
+                lastX = x;
+                lastY = y;
             }
-            ctx.stroke();
+            
+            // Reset shadow properties after the curve is drawn
             ctx.shadowColor = 'transparent';
             ctx.shadowBlur = 0;
         }
