@@ -44,6 +44,19 @@
             background-color: rgba(10, 189, 198, 0.2);
             color: #0abdc6;
         }
+        #eq-canvas-container {
+            position: relative;
+            width: 100%;
+            height: 0;
+            padding-bottom: 50%; /* Aspect ratio 2:1 */
+        }
+        #eq-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -80,8 +93,8 @@
                 <!-- EQ Curve Display -->
                 <div>
                     <h3 class="text-lg font-semibold text-center mb-2" id="current-preset-title">Select a Preset</h3>
-                    <div class="bg-[#10101b] p-2 rounded-md">
-                        <canvas id="eq-canvas" width="800" height="400"></canvas>
+                    <div id="eq-canvas-container" class="bg-[#10101b] p-2 rounded-md">
+                        <canvas id="eq-canvas"></canvas>
                     </div>
                 </div>
 
@@ -114,101 +127,26 @@
 
     <script>
         // --- DATA: PEQ PRESETS ---
-        // This object holds all the preset data based on audio science principles.
-        // Each preset is an array of "bands", where each band has a type, frequency, gain, and Q-factor.
         const presets = {
-            'Fuller Bass & Warmth': [
-                { type: 'Low Shelf', freq: 120, gain: 3.0, q: 0.71 },
-                { type: 'Peaking', freq: 250, gain: 1.5, q: 1.0 }
-            ],
-            'Energetic & Forward': [
-                { type: 'Peaking', freq: 2000, gain: 2.0, q: 1.5 },
-                { type: 'High Shelf', freq: 8000, gain: 1.5, q: 0.71 }
-            ],
-            'Crisp Vocals & Detail': [
-                { type: 'Peaking', freq: 300, gain: -1.5, q: 1.4 },
-                { type: 'Peaking', freq: 5000, gain: 2.5, q: 2.0 },
-                { type: 'High Shelf', freq: 10000, gain: 2.0, q: 0.71 }
-            ],
-            'Smooth & Relaxed': [
-                { type: 'Peaking', freq: 3000, gain: -2.0, q: 1.8 },
-                { type: 'High Shelf', freq: 9000, gain: -1.5, q: 1.0 }
-            ],
-            'Late Night Listening': [
-                { type: 'Low Shelf', freq: 100, gain: 4.0, q: 0.71 },
-                { type: 'High Shelf', freq: 10000, gain: 3.0, q: 0.71 }
-            ],
-            'Theater (Movies)': [
-                { type: 'Peaking', freq: 80, gain: 3.0, q: 1.2 },
-                { type: 'Peaking', freq: 2500, gain: 2.5, q: 1.8 },
-                { type: 'High Shelf', freq: 12000, gain: 2.0, q: 0.9 }
-            ],
-            'Classic Rock': [
-                { type: 'Peaking', freq: 100, gain: 2.5, q: 1.0 },
-                { type: 'Peaking', freq: 500, gain: -1.5, q: 1.4 },
-                { type: 'Peaking', freq: 3000, gain: 2.0, q: 1.8 },
-                { type: 'High Shelf', freq: 10000, gain: 2.5, q: 0.8 }
-            ],
-            'Pop': [
-                { type: 'Low Shelf', freq: 90, gain: 3.0, q: 0.71 },
-                { type: 'Peaking', freq: 400, gain: -2.0, q: 1.5 },
-                { type: 'High Shelf', freq: 12000, gain: 3.5, q: 0.71 }
-            ],
-            'Jazz': [
-                { type: 'Peaking', freq: 200, gain: -1.5, q: 1.2 },
-                { type: 'Peaking', freq: 2500, gain: 1.5, q: 2.0 },
-                { type: 'High Shelf', freq: 11000, gain: 2.0, q: 1.0 }
-            ],
-            'Metal': [
-                { type: 'Peaking', freq: 80, gain: 3.0, q: 1.2 },
-                { type: 'Peaking', freq: 800, gain: -3.0, q: 1.4 },
-                { type: 'Peaking', freq: 4000, gain: 3.5, q: 1.8 },
-                { type: 'High Shelf', freq: 10000, gain: 2.0, q: 0.9 }
-            ],
-            'Stoner Metal': [
-                { type: 'Peaking', freq: 100, gain: 3.0, q: 0.8 },
-                { type: 'Peaking', freq: 300, gain: 3.5, q: 1.2 },
-                { type: 'Peaking', freq: 4000, gain: -3.0, q: 2.0 }
-            ],
-            'Acoustic': [
-                { type: 'Peaking', freq: 150, gain: -2.5, q: 1.8 },
-                { type: 'Peaking', freq: 3000, gain: 1.5, q: 2.5 },
-                { type: 'High Shelf', freq: 9000, gain: 2.0, q: 1.2 }
-            ],
-            'Classical': [
-                { type: 'Low Shelf', freq: 150, gain: -1.0, q: 0.8 },
-                { type: 'High Shelf', freq: 8000, gain: 1.0, q: 1.0 }
-            ],
-            'Electronic/Dance': [
-                { type: 'Low Shelf', freq: 100, gain: 4.0, q: 0.71 },
-                { type: 'Peaking', freq: 500, gain: -2.5, q: 1.4 },
-                { type: 'High Shelf', freq: 13000, gain: 3.5, q: 0.8 }
-            ],
-            'R&B': [
-                { type: 'Low Shelf', freq: 80, gain: 3.5, q: 0.7 },
-                { type: 'Peaking', freq: 2000, gain: 2.0, q: 1.5 },
-                { type: 'High Shelf', freq: 11000, gain: 2.5, q: 0.9 }
-            ],
-            'Rap': [
-                { type: 'Low Shelf', freq: 70, gain: 4.5, q: 0.71 },
-                { type: 'Peaking', freq: 2500, gain: 2.5, q: 1.8 },
-                { type: 'High Shelf', freq: 10000, gain: 2.0, q: 1.0 }
-            ],
-            'Country': [
-                { type: 'Peaking', freq: 150, gain: 2.0, q: 1.0 },
-                { type: 'Peaking', freq: 1500, gain: 2.5, q: 1.8 },
-                { type: 'High Shelf', freq: 8000, gain: 1.5, q: 0.9 }
-            ],
-            'Funk & Soul': [
-                { type: 'Peaking', freq: 90, gain: 2.5, q: 1.0 },
-                { type: 'Peaking', freq: 800, gain: 2.0, q: 1.5 },
-                { type: 'High Shelf', freq: 10000, gain: 2.5, q: 0.8 }
-            ],
-            'Reggae': [
-                { type: 'Low Shelf', freq: 100, gain: 3.5, q: 0.8 },
-                { type: 'Peaking', freq: 250, gain: -3.0, q: 1.4 },
-                { type: 'Peaking', freq: 5000, gain: 2.0, q: 2.0 }
-            ]
+            'Fuller Bass & Warmth': [ { type: 'Low Shelf', freq: 120, gain: 3.0, q: 0.71 }, { type: 'Peaking', freq: 250, gain: 1.5, q: 1.0 } ],
+            'Energetic & Forward': [ { type: 'Peaking', freq: 2000, gain: 2.0, q: 1.5 }, { type: 'High Shelf', freq: 8000, gain: 1.5, q: 0.71 } ],
+            'Crisp Vocals & Detail': [ { type: 'Peaking', freq: 300, gain: -1.5, q: 1.4 }, { type: 'Peaking', freq: 5000, gain: 2.5, q: 2.0 }, { type: 'High Shelf', freq: 10000, gain: 2.0, q: 0.71 } ],
+            'Smooth & Relaxed': [ { type: 'Peaking', freq: 3000, gain: -2.0, q: 1.8 }, { type: 'High Shelf', freq: 9000, gain: -1.5, q: 1.0 } ],
+            'Late Night Listening': [ { type: 'Low Shelf', freq: 100, gain: 4.0, q: 0.71 }, { type: 'High Shelf', freq: 10000, gain: 3.0, q: 0.71 } ],
+            'Theater (Movies)': [ { type: 'Peaking', freq: 80, gain: 3.0, q: 1.2 }, { type: 'Peaking', freq: 2500, gain: 2.5, q: 1.8 }, { type: 'High Shelf', freq: 12000, gain: 2.0, q: 0.9 } ],
+            'Classic Rock': [ { type: 'Peaking', freq: 100, gain: 2.5, q: 1.0 }, { type: 'Peaking', freq: 500, gain: -1.5, q: 1.4 }, { type: 'Peaking', freq: 3000, gain: 2.0, q: 1.8 }, { type: 'High Shelf', freq: 10000, gain: 2.5, q: 0.8 } ],
+            'Pop': [ { type: 'Low Shelf', freq: 90, gain: 3.0, q: 0.71 }, { type: 'Peaking', freq: 400, gain: -2.0, q: 1.5 }, { type: 'High Shelf', freq: 12000, gain: 3.5, q: 0.71 } ],
+            'Jazz': [ { type: 'Peaking', freq: 200, gain: -1.5, q: 1.2 }, { type: 'Peaking', freq: 2500, gain: 1.5, q: 2.0 }, { type: 'High Shelf', freq: 11000, gain: 2.0, q: 1.0 } ],
+            'Metal': [ { type: 'Peaking', freq: 80, gain: 3.0, q: 1.2 }, { type: 'Peaking', freq: 800, gain: -3.0, q: 1.4 }, { type: 'Peaking', freq: 4000, gain: 3.5, q: 1.8 }, { type: 'High Shelf', freq: 10000, gain: 2.0, q: 0.9 } ],
+            'Stoner Metal': [ { type: 'Peaking', freq: 100, gain: 3.0, q: 0.8 }, { type: 'Peaking', freq: 300, gain: 3.5, q: 1.2 }, { type: 'Peaking', freq: 4000, gain: -3.0, q: 2.0 } ],
+            'Acoustic': [ { type: 'Peaking', freq: 150, gain: -2.5, q: 1.8 }, { type: 'Peaking', freq: 3000, gain: 1.5, q: 2.5 }, { type: 'High Shelf', freq: 9000, gain: 2.0, q: 1.2 } ],
+            'Classical': [ { type: 'Low Shelf', freq: 150, gain: -1.0, q: 0.8 }, { type: 'High Shelf', freq: 8000, gain: 1.0, q: 1.0 } ],
+            'Electronic/Dance': [ { type: 'Low Shelf', freq: 100, gain: 4.0, q: 0.71 }, { type: 'Peaking', freq: 500, gain: -2.5, q: 1.4 }, { type: 'High Shelf', freq: 13000, gain: 3.5, q: 0.8 } ],
+            'R&B': [ { type: 'Low Shelf', freq: 80, gain: 3.5, q: 0.7 }, { type: 'Peaking', freq: 2000, gain: 2.0, q: 1.5 }, { type: 'High Shelf', freq: 11000, gain: 2.5, q: 0.9 } ],
+            'Rap': [ { type: 'Low Shelf', freq: 70, gain: 4.5, q: 0.71 }, { type: 'Peaking', freq: 2500, gain: 2.5, q: 1.8 }, { type: 'High Shelf', freq: 10000, gain: 2.0, q: 1.0 } ],
+            'Country': [ { type: 'Peaking', freq: 150, gain: 2.0, q: 1.0 }, { type: 'Peaking', freq: 1500, gain: 2.5, q: 1.8 }, { type: 'High Shelf', freq: 8000, gain: 1.5, q: 0.9 } ],
+            'Funk & Soul': [ { type: 'Peaking', freq: 90, gain: 2.5, q: 1.0 }, { type: 'Peaking', freq: 800, gain: 2.0, q: 1.5 }, { type: 'High Shelf', freq: 10000, gain: 2.5, q: 0.8 } ],
+            'Reggae': [ { type: 'Low Shelf', freq: 100, gain: 3.5, q: 0.8 }, { type: 'Peaking', freq: 250, gain: -3.0, q: 1.4 }, { type: 'Peaking', freq: 5000, gain: 2.0, q: 2.0 } ]
         };
 
         const stylePresets = ['Fuller Bass & Warmth', 'Energetic & Forward', 'Crisp Vocals & Detail', 'Smooth & Relaxed', 'Late Night Listening', 'Theater (Movies)'];
@@ -227,8 +165,9 @@
         // --- INITIALIZATION ---
         window.onload = () => {
             populateButtons();
+            // Use ResizeObserver to redraw canvas when its container size changes
+            new ResizeObserver(() => drawGrid(presets[activePresetButton?.dataset.preset])).observe(document.getElementById('eq-canvas-container'));
             drawGrid();
-            window.addEventListener('resize', () => drawGrid(presets[activePresetButton?.dataset.preset]));
         };
 
         // --- UI POPULATION ---
@@ -293,8 +232,8 @@
         // --- CANVAS DRAWING LOGIC ---
         const MIN_FREQ = 20;
         const MAX_FREQ = 20000;
-        const MIN_GAIN = -12;
-        const MAX_GAIN = 12;
+        const MIN_GAIN = -15; // Added padding
+        const MAX_GAIN = 15;  // Added padding
 
         function freqToX(freq, width) {
             const logMin = Math.log10(MIN_FREQ);
@@ -318,46 +257,54 @@
 
             ctx.clearRect(0, 0, width, height);
 
+            // Define padding
+            const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+            const chartWidth = width - padding.left - padding.right;
+            const chartHeight = height - padding.top - padding.bottom;
+
             // Draw grid lines
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-            ctx.font = '10px Inter';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = '11px Inter';
+            
+            // Vertical (Frequency) lines and labels
             ctx.textAlign = 'center';
-
-            // Vertical (Frequency) lines
-            const freqLines = [30, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
+            ctx.textBaseline = 'top';
+            const freqLines = [30, 100, 300, 1000, 3000, 10000];
             freqLines.forEach(freq => {
-                const x = freqToX(freq, width);
+                const x = padding.left + freqToX(freq, chartWidth);
                 ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, height);
+                ctx.moveTo(x, padding.top);
+                ctx.lineTo(x, padding.top + chartHeight);
                 ctx.stroke();
                 const label = freq >= 1000 ? `${freq/1000}k` : freq;
-                ctx.fillText(label, x, height - 5);
+                ctx.fillText(label + "Hz", x, padding.top + chartHeight + 5);
             });
 
-            // Horizontal (Gain) lines
-            const gainLines = [-9, -6, -3, 3, 6, 9];
+            // Horizontal (Gain) lines and labels
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            const gainLines = [-12, -9, -6, -3, 3, 6, 9, 12];
             gainLines.forEach(gain => {
-                const y = gainToY(gain, height);
+                const y = padding.top + gainToY(gain, chartHeight);
                 ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(width, y);
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(padding.left + chartWidth, y);
                 ctx.stroke();
-                ctx.fillText(`${gain}dB`, 20, y - 2);
+                ctx.fillText(`${gain}dB`, padding.left - 8, y);
             });
             
             // Draw 0dB line
-            const y0 = gainToY(0, height);
-            ctx.strokeStyle = 'rgba(10, 189, 198, 0.4)';
-            ctx.lineWidth = 1;
+            const y0 = padding.top + gainToY(0, chartHeight);
+            ctx.strokeStyle = 'rgba(10, 189, 198, 0.5)';
+            ctx.lineWidth = 1.5;
             ctx.beginPath();
-            ctx.moveTo(0, y0);
-            ctx.lineTo(width, y0);
+            ctx.moveTo(padding.left, y0);
+            ctx.lineTo(padding.left + chartWidth, y0);
             ctx.stroke();
 
             // Redraw the curve if one is active
-            if (presetData.length > 0) {
+            if (presetData && presetData.length > 0) {
                 drawCurve(presetData, false);
             }
         }
@@ -369,6 +316,9 @@
             
             const width = canvas.clientWidth;
             const height = canvas.clientHeight;
+            const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+            const chartWidth = width - padding.left - padding.right;
+            const chartHeight = height - padding.top - padding.bottom;
             
             ctx.beginPath();
             ctx.strokeStyle = '#f957d0';
@@ -376,8 +326,8 @@
             ctx.shadowColor = 'rgba(249, 87, 208, 0.5)';
             ctx.shadowBlur = 10;
 
-            for (let i = 0; i <= width; i++) {
-                const percent = i / width;
+            for (let i = 0; i <= chartWidth; i++) {
+                const percent = i / chartWidth;
                 const logMin = Math.log10(MIN_FREQ);
                 const logMax = Math.log10(MAX_FREQ);
                 const freq = Math.pow(10, logMin + (logMax - logMin) * percent);
@@ -387,10 +337,11 @@
                     totalGain += getGainAtFrequency(band, freq);
                 });
                 
-                totalGain = Math.max(MIN_GAIN, Math.min(MAX_GAIN, totalGain));
+                // Clamp gain to the visible range for drawing
+                const displayGain = Math.max(-12, Math.min(12, totalGain));
                 
-                const x = i;
-                const y = gainToY(totalGain, height);
+                const x = padding.left + i;
+                const y = padding.top + gainToY(displayGain, chartHeight);
 
                 if (i === 0) {
                     ctx.moveTo(x, y);
@@ -404,78 +355,43 @@
         }
 
         // --- EQ MATH ---
-        // This function calculates the gain contribution of a single PEQ band at a specific frequency.
         function getGainAtFrequency(band, currentFreq) {
             const { type, freq, gain, q } = band;
-            
-            // Normalize frequency
-            const w0 = 2 * Math.PI * freq / 44100; // Assuming 44.1kHz sample rate
+            const w0 = 2 * Math.PI * freq / 44100;
             const w = 2 * Math.PI * currentFreq / 44100;
+            const A = 10**(gain / 40);
 
             switch (type) {
                 case 'Peaking': {
                     const alpha = Math.sin(w0) / (2 * q);
-                    const A = 10**(gain / 40);
-                    const H = (
-                        (A**2 + 1) - (A**2 - 1) * Math.cos(w0) + 2 * Math.sqrt(A) * alpha
-                    ) / (
-                        (1 + A**2) + (1 - A**2) * Math.cos(w0) + 2 * Math.sqrt(A) * alpha
-                    );
-                    
-                    const b0 = 1 + alpha * A;
-                    const b1 = -2 * Math.cos(w0);
-                    const b2 = 1 - alpha * A;
-                    const a0 = 1 + alpha / A;
-                    const a1 = -2 * Math.cos(w0);
-                    const a2 = 1 - alpha / A;
-
+                    const b0 = 1 + alpha * A, b1 = -2 * Math.cos(w0), b2 = 1 - alpha * A;
+                    const a0 = 1 + alpha / A, a1 = -2 * Math.cos(w0), a2 = 1 - alpha / A;
                     const phi = Math.pow(Math.sin(w / 2), 2);
-                    const num = Math.pow(b0 + b1 + b2, 2) - 4 * (b0 * b1 + 4 * b0 * b2 + b1 * b2) * phi + 16 * b0 * b2 * phi * phi;
-                    const den = Math.pow(a0 + a1 + a2, 2) - 4 * (a0 * a1 + 4 * a0 * a2 + a1 * a2) * phi + 16 * a0 * a2 * phi * phi;
-                    
-                    if (den === 0) return 0;
-                    return 10 * Math.log10(num / den);
+                    const num = Math.pow(b0+b1+b2,2) - 4*(b0*b1 + 4*b0*b2 + b1*b2)*phi + 16*b0*b2*phi*phi;
+                    const den = Math.pow(a0+a1+a2,2) - 4*(a0*a1 + 4*a0*a2 + a1*a2)*phi + 16*a0*a2*phi*phi;
+                    return (den === 0) ? 0 : 10 * Math.log10(num / den);
                 }
                 case 'Low Shelf': {
-                    const A = 10**(gain / 40);
                     const alpha = Math.sin(w0) / (2 * q);
                     const beta = 2 * Math.sqrt(A) * alpha;
-
-                    const b0 = A * ((A + 1) - (A - 1) * Math.cos(w0) + beta);
-                    const b1 = 2 * A * ((A - 1) - (A + 1) * Math.cos(w0));
-                    const b2 = A * ((A + 1) - (A - 1) * Math.cos(w0) - beta);
-                    const a0 = (A + 1) + (A - 1) * Math.cos(w0) + beta;
-                    const a1 = -2 * ((A - 1) + (A + 1) * Math.cos(w0));
-                    const a2 = (A + 1) + (A - 1) * Math.cos(w0) - beta;
-
+                    const b0 = A*((A+1)-(A-1)*Math.cos(w0)+beta), b1 = 2*A*((A-1)-(A+1)*Math.cos(w0)), b2 = A*((A+1)-(A-1)*Math.cos(w0)-beta);
+                    const a0 = (A+1)+(A-1)*Math.cos(w0)+beta, a1 = -2*((A-1)+(A+1)*Math.cos(w0)), a2 = (A+1)+(A-1)*Math.cos(w0)-beta;
                     const phi = Math.pow(Math.sin(w / 2), 2);
-                    const num = Math.pow(b0+b1+b2, 2) - 4*(b0*b1 + 4*b0*b2 + b1*b2)*phi + 16*b0*b2*phi*phi;
-                    const den = Math.pow(a0+a1+a2, 2) - 4*(a0*a1 + 4*a0*a2 + a1*a2)*phi + 16*a0*a2*phi*phi;
-                    
-                    if (den === 0) return 0;
-                    return 10 * Math.log10(num / den);
+                    const num = Math.pow(b0+b1+b2,2) - 4*(b0*b1 + 4*b0*b2 + b1*b2)*phi + 16*b0*b2*phi*phi;
+                    const den = Math.pow(a0+a1+a2,2) - 4*(a0*a1 + 4*a0*a2 + a1*a2)*phi + 16*a0*a2*phi*phi;
+                    return (den === 0) ? 0 : 10 * Math.log10(num / den);
                 }
                 case 'High Shelf': {
-                    const A = 10**(gain / 40);
                     const alpha = Math.sin(w0) / (2 * q);
                     const beta = 2 * Math.sqrt(A) * alpha;
-
-                    const b0 = A * ((A + 1) + (A - 1) * Math.cos(w0) + beta);
-                    const b1 = -2 * A * ((A - 1) + (A + 1) * Math.cos(w0));
-                    const b2 = A * ((A + 1) + (A - 1) * Math.cos(w0) - beta);
-                    const a0 = (A + 1) - (A - 1) * Math.cos(w0) + beta;
-                    const a1 = 2 * ((A - 1) - (A + 1) * Math.cos(w0));
-                    const a2 = (A + 1) - (A - 1) * Math.cos(w0) - beta;
-
+                    const b0 = A*((A+1)+(A-1)*Math.cos(w0)+beta), b1 = -2*A*((A-1)+(A+1)*Math.cos(w0)), b2 = A*((A+1)+(A-1)*Math.cos(w0)-beta);
+                    const a0 = (A+1)-(A-1)*Math.cos(w0)+beta, a1 = 2*((A-1)-(A+1)*Math.cos(w0)), a2 = (A+1)-(A-1)*Math.cos(w0)-beta;
                     const phi = Math.pow(Math.sin(w / 2), 2);
-                    const num = Math.pow(b0+b1+b2, 2) - 4*(b0*b1 + 4*b0*b2 + b1*b2)*phi + 16*b0*b2*phi*phi;
-                    const den = Math.pow(a0+a1+a2, 2) - 4*(a0*a1 + 4*a0*a2 + a1*a2)*phi + 16*a0*a2*phi*phi;
-                    
-                    if (den === 0) return 0;
-                    return 10 * Math.log10(num / den);
+                    const num = Math.pow(b0+b1+b2,2) - 4*(b0*b1 + 4*b0*b2 + b1*b2)*phi + 16*b0*b2*phi*phi;
+                    const den = Math.pow(a0+a1+a2,2) - 4*(a0*a1 + 4*a0*a2 + a1*a2)*phi + 16*a0*a2*phi*phi;
+                    return (den === 0) ? 0 : 10 * Math.log10(num / den);
                 }
-                default:
-                    return 0;
+                default: return 0;
             }
         }
     </script>
