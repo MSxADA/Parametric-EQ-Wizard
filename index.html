@@ -59,13 +59,13 @@
         }
         /* Style for positive gain (boost) */
         .gain-boost {
-            color: #7FFF00; /* Neon Green (Chartreuse) */
-            text-shadow: 0 0 5px #7FFF00;
+            color: #0abdc6; /* Teal */
+            text-shadow: 0 0 5px #0abdc6;
         }
         /* Style for negative gain (cut) */
         .gain-cut {
-            color: #FF4747; /* Neon Red */
-            text-shadow: 0 0 5px #FF4747;
+            color: #f957d0; /* Pink */
+            text-shadow: 0 0 5px #f957d0;
         }
     </style>
 </head>
@@ -334,9 +334,9 @@
             const chartWidth = width - padding.left - padding.right;
             const chartHeight = height - padding.top - padding.bottom;
             
-            // Define neon colors from the CSS
-            const neonGreen = '#7FFF00';
-            const neonRed = '#FF4747';
+            // Define colors from the button styles
+            const boostColor = '#0abdc6';
+            const cutColor = '#f957d0';
             // Color for the 0dB line, to be used for flat segments
             const zeroLineColor = 'rgba(10, 189, 198, 0.8)';
 
@@ -379,9 +379,9 @@
                 let segmentColor;
                 // Use a small threshold to prevent color flickering near the zero line
                 if (displayGain > 0.05) { 
-                    segmentColor = neonGreen;
+                    segmentColor = boostColor;
                 } else if (displayGain < -0.05) {
-                    segmentColor = neonRed;
+                    segmentColor = cutColor;
                 } else {
                     // Use the 0dB line color for parts that are essentially flat
                     segmentColor = zeroLineColor; 
